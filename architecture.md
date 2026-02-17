@@ -72,6 +72,47 @@ __global__ void gemm(float *A, float *B, float *C, int N) {
 }
 ```
 
+## Softmax Example
+Softmax is a crucial activation function in deep learning, converting a vector of values into a probability distribution. The key to an efficient GPU implementation is numerical stability and memory optimization.
+
+### Numerically Stable Softmax Kernel
+This CUDA kernel demonstrates a numerically stable softmax implementation that:
+1. Subtracts the maximum value to prevent overflow
+2. Uses shared memory for efficient computation
+3. Handles multiple rows in parallel
+
+```cpp
+__global__ void softmax(float *input, float *output, int N, int D) {
+    __shared__ float maxVal[1024];
+    __shared__ float sumExp[1024];
+    
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int row = idx / D;
+    int col = idx % D;
+    
+    if (idx < N * D) {
+        // Find maximum value in row for numerical stability
+        float myMax = input[row * D + col];
+        __syncthreads();
+        
+        // Compute exponentials with max subtraction
+        float myExp = exp(input[row * D + col] - myMax);
+        
+        // Sum all exponentials
+        __syncthreads();
+        
+        // Compute softmax: exp(x) / sum(exp(x))
+        output[row * D + col] = myExp / sumExp[row];
+    }
+}
+```
+
+### Softmax Optimization Tips
+- **Numerical Stability**: Subtract the maximum value from each element before computing exponentials
+- **Memory Coalescing**: Arrange data to maximize memory bandwidth utilization
+- **Shared Memory**: Cache intermediate results to reduce global memory access
+- **Warp Optimization**: Use warp-level primitives for efficient reductions
+
 ## Memory Hierarchy
 
 ```mermaid
@@ -88,4 +129,4 @@ graph TB
 ```
 
 ## Conclusion
-Understanding how to effectively write CUDA kernels and optimize operations like GEMM can lead to substantial performance improvements in applications that require high computational power.
+Understanding how to effectively write CUDA kernels and optimize operations like GEMM and Softmax can lead to substantial performance improvements in applications that require high computational power.
