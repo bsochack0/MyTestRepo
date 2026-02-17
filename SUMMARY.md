@@ -6,8 +6,6 @@
 
 ## My Component 1
 
-### My subcomponent
-
 * [CUDA Kernel Development and GEMM Optimization](my-component-1/architecture.md)
 
 ## Subdirectory
